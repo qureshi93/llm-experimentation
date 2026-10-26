@@ -59,3 +59,29 @@ openwebui:
 Resources 16gb and 4 CPUs
 add a variable [OLLAMA_BASE_URL = *url for ollama model*]
 request based billing is fine
+
+---
+
+# Hong Kong Marketing Intelligence Pipeline
+
+PostgreSQL + pgvector database with baseline ingestion, active enrichment, and AEO embedding generation.
+
+## Setup
+```bash
+cp .env.example .env        # set OPENAI_API_KEY; DB_URL defaults to local compose DB
+docker compose up -d postgres redis   # schema.sql is applied automatically on first boot
+pip install -r requirements.txt
+# apply schema manually to an existing DB:
+psql "$DB_URL" -f schema.sql
+```
+
+## Run
+```bash
+./scripts/run_baseline_ingest.sh data/storeleads.csv      # csv / json / jsonl; upserts companies (country HK)
+./scripts/run_enrichment_worker.sh                        # enriches companies not updated in 30 days (EMBED=1 also embeds)
+PYTHONPATH=. python -m src.enrichment.generate_aeo_embeddings   # text-embedding-3-small -> aeo_audits.embeddings
+docker compose up -d worker                               # run the enrichment loop as a service
+```
+Tests: `PYTHONPATH=. pytest tests`.
+
+Layout: `schema.sql` (schema + HNSW vector index), `src/db` (pooled client), `src/ingestion`, `src/enrichment`, `src/utils`, `scripts/`.
