@@ -22,7 +22,7 @@ services:
       dockerfile: Dockerfile.worker
     env_file: [.env.example]
     environment:
-      DB_URL: ******postgres:5432/hkmi
+      DB_URL: postgresql://postgres:postgres@postgres:5432/hkmi
       REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres: {condition: service_healthy}
